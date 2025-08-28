@@ -8,18 +8,7 @@ Monitors node updates and creates randomization nodes with unique offsets for va
 import bpy
 from bpy.app.handlers import persistent
 from functools import partial
-
-bl_info = {
-    "name": "Seed Randomizer for Geometry Nodes",
-    "author": "almarouk",
-    "version": (1, 0, 0),
-    "blender": (4, 5, 0),
-    "location": "Geometry Nodes",
-    "description": "Automatically inserts Random Value nodes when Seed inputs are linked",
-    "warning": "",
-    "doc_url": "",
-    "category": "Node",
-}
+from .utils import get_node_socket_location
 
 # Global state to track handler registration
 _handler_registered: bool = False
@@ -49,8 +38,13 @@ def process_link(
             type="FunctionNodeRandomValue"
         )
         random_node.hide = True
+        random_node.select = False
         random_node.width = random_node.bl_width_min
-        random_node.location = (to_node.location.x - random_node.width - 50, to_node.location.y)
+        socket_location = get_node_socket_location(to_node, "Seed", True)
+        if socket_location:
+            random_node.location = (socket_location[0] - random_node.width - 25, socket_location[1] + 15)
+        else:
+            random_node.location = (to_node.location.x - random_node.width - 25, to_node.location.y)
         random_node.label = "Auto Random Seed"
         random_node.data_type = "INT"
 
@@ -65,13 +59,30 @@ def process_link(
             type="FunctionNodeInputInt"
         )
         int_value_node.hide = True
+        int_value_node.select = False
         int_value_node.width = int_value_node.bl_width_min
-        int_value_node.location = (random_node.location.x - int_value_node.width - 50, random_node.location.y)
+        int_value_node.location = (random_node.location.x - int_value_node.width - 25, random_node.location.y)
         int_value_node.label = "Auto Random Seed Offset"
         int_value_node.integer = new_offset
 
+        # Add a Group Input Node with Seed shown only
+        group_input_node: bpy.types.NodeGroupInput = node_tree.nodes.new(
+            type="NodeGroupInput"
+        )
+        group_input_node.hide = True
+        group_input_node.select = False
+        group_input_node.width = group_input_node.bl_width_min
+        group_input_node.label = "Seed"
+        for socket in group_input_node.outputs:
+            if socket.name.strip().lower() == "seed":
+                socket.hide = False
+            else:
+                socket.hide = True
+        # group_input_node.location = (random_node.location.x - group_input_node.width - 25, int_value_node.location.y - int_value_node.dimensions.y - 5)
+        group_input_node.location = (random_node.location.x - group_input_node.width - 25, int_value_node.location.y - int_value_node.bl_height_min - 5)
+
         # Create new links through the Random Value node
-        node_tree.links.new(link.from_socket, random_node.inputs["Seed"], verify_limits=True)
+        node_tree.links.new(group_input_node.outputs["Seed"], random_node.inputs["Seed"], verify_limits=True)
         node_tree.links.new(random_node.outputs["Value"], link.to_socket, verify_limits=True)
         node_tree.links.new(int_value_node.outputs["Integer"], random_node.inputs["ID"], verify_limits=True)
 
