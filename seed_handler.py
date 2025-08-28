@@ -48,7 +48,9 @@ def process_link(
         random_node: bpy.types.FunctionNodeRandomValue = node_tree.nodes.new(
             type="FunctionNodeRandomValue"
         )
-        random_node.location = (to_node.location.x - random_node.bl_width_default - 50, to_node.location.y)
+        random_node.hide = True
+        random_node.width = random_node.bl_width_min
+        random_node.location = (to_node.location.x - random_node.width - 50, to_node.location.y)
         random_node.label = "Auto Random Seed"
         random_node.data_type = "INT"
 
@@ -62,7 +64,9 @@ def process_link(
         int_value_node: bpy.types.FunctionNodeInputInt = node_tree.nodes.new(
             type="FunctionNodeInputInt"
         )
-        int_value_node.location = (random_node.location.x - int_value_node.bl_width_default - 50, random_node.location.y)
+        int_value_node.hide = True
+        int_value_node.width = int_value_node.bl_width_min
+        int_value_node.location = (random_node.location.x - int_value_node.width - 50, random_node.location.y)
         int_value_node.label = "Auto Random Seed Offset"
         int_value_node.integer = new_offset
 
