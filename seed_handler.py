@@ -1,3 +1,10 @@
+"""
+Seed Randomizer for Geometry Nodes - Blender Addon
+
+Automatically inserts Random Value nodes when Seed inputs are linked in Geometry Node trees.
+Monitors node updates and creates randomization nodes with unique offsets for varied outputs.
+"""
+
 import bpy
 from bpy.app.handlers import persistent
 from functools import partial
@@ -21,6 +28,17 @@ _handler_registered: bool = False
 def process_link(
     node_tree: bpy.types.GeometryNodeTree, link: bpy.types.NodeLink, new_offset: int
 ) -> bool:
+    """
+    Insert Random Value and Integer Value nodes between a seed link.
+    
+    Args:
+        node_tree: Geometry node tree containing the link
+        link: Node link connecting to a "Seed" input
+        new_offset: Unique integer offset for the Random Value node ID
+        
+    Returns:
+        True if nodes were successfully inserted, False otherwise
+    """
     try:
         to_node = link.to_socket.node
 
@@ -64,7 +82,12 @@ def process_link(
 
 
 def should_process_link(link: bpy.types.NodeLink) -> bool:
-    """Fast check if a link should be processed for seed insertion"""
+    """
+    Check if a link should have a Random Value node inserted.
+    
+    Returns True for links from NodeGroupInput "seed" to node "seed" inputs,
+    excluding existing auto-generated Random Value nodes.
+    """
     from_socket: bpy.types.NodeSocket | None = getattr(link, "from_socket", None)
     to_socket: bpy.types.NodeSocket | None = getattr(link, "to_socket", None)
 
@@ -99,7 +122,12 @@ def should_process_link(link: bpy.types.NodeLink) -> bool:
 
 @persistent
 def check_seed_links(scene: bpy.types.Scene, depsgraph: bpy.types.Depsgraph) -> None:
-    """Handler to check for new seed links and insert Random Value nodes"""
+    """
+    Depsgraph handler that monitors geometry node trees for seed input changes.
+    
+    Identifies updated node trees with seed inputs and schedules them for processing
+    using timer callbacks for better performance.
+    """
 
     # bpy.ops.node.select_all(action='DESELECT')
 
@@ -135,7 +163,12 @@ def check_seed_links(scene: bpy.types.Scene, depsgraph: bpy.types.Depsgraph) -> 
 
 
 def process_node_tree_links(node_tree_name: str) -> None:
-    """Process links in a specific node tree for seed connections"""
+    """
+    Process all eligible seed links in a geometry node tree.
+    
+    Finds links needing Random Value nodes, assigns unique offsets,
+    and processes each link. Called as a timer callback.
+    """
 
     try:
         node_tree: bpy.types.GeometryNodeTree | None = bpy.data.node_groups.get(node_tree_name)
@@ -172,7 +205,7 @@ def process_node_tree_links(node_tree_name: str) -> None:
 
 
 def register() -> None:
-    """Register the handler (enabled by default)"""
+    """Register the depsgraph handler to monitor seed link changes."""
     global _handler_registered
 
     if not _handler_registered:
@@ -182,14 +215,13 @@ def register() -> None:
 
 
 def unregister() -> None:
-    """Unregister the handler"""
-    global _handler_registered, _last_update_frame
+    """Unregister the depsgraph handler and reset global state."""
+    global _handler_registered
 
     if _handler_registered:
         if check_seed_links in bpy.app.handlers.depsgraph_update_post:
             bpy.app.handlers.depsgraph_update_post.remove(check_seed_links)
         _handler_registered = False
-        _last_update_frame = -1
         print("Seed randomizer handler unregistered")
 
 
