@@ -1,0 +1,32 @@
+schema_version = "1.0.0"
+
+# Extension metadata
+id = "blender_tools"
+version = "1.0.0"
+name = "Node Editor Tools"
+tagline = "Automates common node editor tasks"
+maintainer = "almarouk"
+type = "add-on"
+
+# Blender version compatibility
+blender_version_min = "4.2.0"
+# Note: Updated from original 4.5.0 to meet Extension requirements
+
+# License (GPL-3.0 based on the LICENSE file)
+license = ["SPDX:GPL-3.0-or-later"]
+
+# Optional: Add tags for better categorization
+tags = ["Node"]
+
+# Optional: Add website when available
+website = "https://github.com/almarouk/blender-tools"
+
+[build]
+paths_exclude_pattern = [
+    "__pycache__/",
+    ".*",
+    "*.zip",
+    "pyproject.toml",
+    "build/",
+    "build.py",
+]

@@ -32,15 +32,16 @@ def is_tall(node: bpy.types.Node, socket: bpy.types.NodeSocket) -> bool:
 
 
 def get_node_socket_location(
-    node: bpy.types.Node, socket_key: str, is_input: bool
+    node: bpy.types.Node, socket_key: str, is_input: bool, absolute: bool = True
 ) -> tuple[float, float] | None:
     """Calculate the screen position of a node socket.
-    
+
     Args:
         node: The Blender node containing the socket
         socket_key: Name/key of the socket to locate
         is_input: True for input socket, False for output socket
-        
+        absolute: If True, return absolute coordinates
+
     Returns:
         (x, y) coordinates of the socket, or None if node/socket is hidden
     """
@@ -48,11 +49,12 @@ def get_node_socket_location(
         if node.hide:
             return None
         socket_key = socket_key.strip().lower()
+        node_location = node.location_absolute if absolute else node.location
 
         if not is_input:
-            x = node.location.x + node.dimensions.x + X_OFFSET
-            y = node.location.y + Y_TOP
-            for i, (key, socket) in enumerate(node.outputs.items()):
+            x = node_location.x + node.dimensions.x + X_OFFSET
+            y = node_location.y + Y_TOP
+            for key, socket in node.outputs.items():
                 key = key.strip().lower()
                 if is_hidden(socket):
                     if key == socket_key:
@@ -62,9 +64,9 @@ def get_node_socket_location(
                     return x, y
                 y -= Y_OFFSET
         else:
-            x = node.location.x
-            y = node.location.y - node.dimensions.y + Y_BOTTOM
-            for i, (key, socket) in enumerate(reversed(node.inputs.items())):
+            x = node_location.x
+            y = node_location.y - node.dimensions.y + Y_BOTTOM
+            for key, socket in reversed(node.inputs.items()):
                 key = key.strip().lower()
                 if is_hidden(socket):
                     if key == socket_key:

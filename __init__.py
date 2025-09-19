@@ -1,17 +1,27 @@
 from __future__ import annotations
-from .seed_handler import register, unregister
 
-bl_info = {
-    "name": "Seed Randomizer for Geometry Nodes",
-    "author": "almarouk",
-    "version": (1, 0, 0),
-    "blender": (4, 5, 0),
-    "location": "Geometry Nodes",
-    "description": "Automatically inserts Random Value nodes when Seed inputs are linked",
-    "warning": "",
-    "doc_url": "",
-    "category": "Node",
-}
+from .handlers import HandlerRegistry
+from .seed_handler import SeedRandomizerHandler
+from .single_socket_handler import SingleSocketHandler
+
+
+def register():
+    """Register all handlers."""
+    # Global handler registry instance
+    global handler_registry
+    handler_registry = HandlerRegistry()
+    handler_registry.register_handler(SeedRandomizerHandler())
+    handler_registry.register_handler(SingleSocketHandler())
+    handler_registry.register()
+
+
+def unregister():
+    """Unregister all handlers."""
+    global handler_registry
+    if handler_registry:
+        handler_registry.unregister()
+        handler_registry = None
+
 
 if __name__ == "__main__":
     register()
