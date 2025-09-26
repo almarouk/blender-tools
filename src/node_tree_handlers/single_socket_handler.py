@@ -1,5 +1,13 @@
+"""
+Single Socket Handler
+
+Hides group input/output nodes with only one visible socket and sets their label to the socket name.
+"""
+
+__all__ = ["SingleSocketHandler"]
+
 import bpy
-from .handlers import NodeTreeHandler
+from . import NodeTreeHandler
 
 
 class SingleSocketHandler(NodeTreeHandler):
@@ -41,6 +49,7 @@ class SingleSocketHandler(NodeTreeHandler):
                     if node.label != socket.name or not node.hide:
                         node.label = socket.name
                         node.hide = True
+                        node.width = node.bl_width_min
                 except Exception as e:
                     print(f"Error processing node '{node.name}': {e}")
                     continue

@@ -1,13 +1,15 @@
 """
-Node Editor Tools - Seed Randomizer Handler
+Seed Randomizer Handler
 
 Automatically inserts Random Value nodes when Seed inputs are linked in Node trees.
 Monitors node updates and creates randomization nodes with unique offsets for varied outputs.
 """
 
+__all__ = ["SeedRandomizerHandler"]
+
 import bpy
-from .utils import get_node_socket_location
-from .handlers import NodeTreeHandler
+from ..utils import get_node_socket_location
+from . import NodeTreeHandler
 from typing import cast
 
 

@@ -4,6 +4,8 @@ Handler system for Blender Node monitoring.
 Provides a base handler interface and dispatcher for processing node tree changes.
 """
 
+__all__ = ["NodeTreeHandler", "HandlerRegistry"]
+
 import bpy
 from bpy.app.handlers import persistent
 from abc import ABC, abstractmethod
