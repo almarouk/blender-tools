@@ -1,36 +1,62 @@
-"""
-Node tree handlers package for Blender.
-
-Provides handlers for monitoring and processing node tree changes.
-"""
+from __future__ import annotations
 
 __all__ = [
-    "NodeTreeHandler",  # Base class for creating custom handlers
-    "register",  # Main registration function
-    "unregister",  # Main unregistration function
+    "register",
+    "unregister",
 ]
 
-from .handlers import HandlerRegistry, NodeTreeHandler
-from .seed_handler import SeedRandomizerHandler
-from .single_socket_handler import SingleSocketHandler
+from typing import TYPE_CHECKING, Callable, ParamSpec, TypeVar
+from functools import partial
+import bpy
+from bpy.app.handlers import persistent, depsgraph_update_post
+from bpy.app.timers import register as register_timer
+from ..operators import HideRenameSingleOutputNode, RandomizeSeed
+from .. import utils
+
+if TYPE_CHECKING:
+    from bpy.types import Depsgraph, Scene
+
+    P = ParamSpec("P")
+    T = TypeVar("T", float, None)
+
+    def persistent(func: Callable[P, T]) -> Callable[P, T]:
+        return func
 
 
-# Global handler registry instance
-_handler_registry = None
+def call_operators(updated_trees: list[str]) -> None:
+    global _operators
+    for cls in _operators:
+        module, func = cls.bl_idname.split(".", 1)
+        op = getattr(getattr(bpy.ops, module), func)
+        for node_tree_name in updated_trees:
+            if cls.poll_node_tree(node_tree_name):
+                op(node_tree_name=node_tree_name)
 
+
+@persistent
+def depsgraph_handler(scene: Scene, depsgraph: Depsgraph) -> None:
+    updated_trees: list[str] = []
+    for update in depsgraph.updates[:]:
+        if update.id and update.id.id_type == "NODETREE":
+            updated_trees.append(update.id.name)
+
+    if not updated_trees:
+        return
+
+    # Use timer for delayed processing
+    register_timer(
+        partial(call_operators, updated_trees=updated_trees),
+        first_interval=0.3,
+    )
 
 def register():
-    """Register all node tree handlers."""
-    global _handler_registry
-    _handler_registry = HandlerRegistry()
-    _handler_registry.register_handler(SeedRandomizerHandler())
-    _handler_registry.register_handler(SingleSocketHandler())
-    _handler_registry.register()
-
+    depsgraph_update_post.append(depsgraph_handler)
 
 def unregister():
-    """Unregister all node tree handlers."""
-    global _handler_registry
-    if _handler_registry:
-        _handler_registry.unregister()
-        _handler_registry = None
+    depsgraph_update_post.remove(depsgraph_handler)
+
+
+_operators: tuple[type[utils.handlers.BaseNodeTreeHandler], ...] = (
+    HideRenameSingleOutputNode,
+    RandomizeSeed,
+)
