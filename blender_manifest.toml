@@ -19,7 +19,7 @@ license = ["SPDX:GPL-3.0-or-later"]
 tags = ["Node"]
 
 # Optional: Add website when available
-website = "https://github.com/almarouk/blender-tools"
+website = "https://github.com/almarouk/blender_tools"
 
 [build]
 paths_exclude_pattern = [

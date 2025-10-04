@@ -3,15 +3,15 @@ from __future__ import annotations
 __all__ = [
     "register",
     "unregister",
+    "handler_operators",
 ]
 
 from typing import TYPE_CHECKING, Callable, ParamSpec, TypeVar
 from functools import partial
-import bpy
 from bpy.app.handlers import persistent, depsgraph_update_post
 from bpy.app.timers import register as register_timer
-from ..operators import HideRenameSingleOutputNode, RandomizeSeed
-from .. import utils
+from .operators import HideRenameSingleOutputNode, RandomizeSeed
+from . import utils
 
 if TYPE_CHECKING:
     from bpy.types import Depsgraph, Scene
@@ -24,13 +24,14 @@ if TYPE_CHECKING:
 
 
 def call_operators(updated_trees: list[str]) -> None:
-    global _operators
-    for cls in _operators:
-        module, func = cls.bl_idname.split(".", 1)
-        op = getattr(getattr(bpy.ops, module), func)
-        for node_tree_name in updated_trees:
-            if cls.poll_node_tree(node_tree_name):
-                op(node_tree_name=node_tree_name)
+    global handler_operators
+    active_handlers = utils.preferences.get_preferences().get_active_handlers()
+    for cls in handler_operators:
+        if cls.bl_idname in active_handlers:
+            for node_tree_name in updated_trees:
+                if cls.poll_node_tree(node_tree_name):
+                    op = utils.operators.get_operator_func(cls.bl_idname)
+                    op(node_tree_name=node_tree_name)
 
 
 @persistent
@@ -49,14 +50,17 @@ def depsgraph_handler(scene: Scene, depsgraph: Depsgraph) -> None:
         first_interval=0.3,
     )
 
+
 def register():
+    utils.preferences.get_preferences().register_handlers(handler_operators)
     depsgraph_update_post.append(depsgraph_handler)
+
 
 def unregister():
     depsgraph_update_post.remove(depsgraph_handler)
 
 
-_operators: tuple[type[utils.handlers.BaseNodeTreeHandler], ...] = (
+handler_operators: tuple[type[utils.handlers.BaseNodeTreeHandler], ...] = (
     HideRenameSingleOutputNode,
     RandomizeSeed,
 )

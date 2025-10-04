@@ -81,12 +81,12 @@ class SplitMergeGroupInput(utils.operators.BaseOperator):
 
     @classmethod
     def _poll(cls, context: Context):
-        nodes = utils.nodes.get_selected_nodes(
+        result = utils.nodes.get_selected_nodes(
             context,
             node_type="NodeGroupInput",
         )
-        if isinstance(nodes, str):
-            return nodes
+        if isinstance(result, str):
+            return result
 
     def _execute(self, context: Context):
         nodes = utils.nodes.get_selected_nodes(context, node_type="NodeGroupInput")

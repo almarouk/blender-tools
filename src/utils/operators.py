@@ -1,14 +1,18 @@
 from __future__ import annotations
 
-__all__ = ["BaseOperator"]
+__all__ = ["BaseOperator", "get_operator_func"]
 
 from typing import TYPE_CHECKING
 from abc import abstractmethod
 from bpy.types import Operator
+import bpy
 
 if TYPE_CHECKING:
     from bpy.types import Context
 
+def get_operator_func(idname: str):
+    module, func = idname.split(".", 1)
+    return getattr(getattr(bpy.ops, module), func)
 
 class BaseOperator(Operator):
     @classmethod

@@ -48,13 +48,13 @@ class BaseNodeTreeHandler(BaseOperator):
 
     @classmethod
     def _poll(cls, context: Context):
-        return None
-        node_tree = get_node_tree(context)
-        if isinstance(node_tree, str):
-            return node_tree
-        msg = cls._poll_node_tree(node_tree)
-        if isinstance(msg, str):
-            return msg
+        pass
+        # node_tree = get_node_tree(context)
+        # if isinstance(node_tree, str):
+        #     return node_tree
+        # msg = cls._poll_node_tree(node_tree)
+        # if isinstance(msg, str):
+        #     return msg
 
     def _execute(self, context: Context):
         if self.node_tree_name:

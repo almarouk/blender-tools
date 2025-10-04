@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 from .src import (
-    node_tree_handlers,
+    handlers,
     operators,
     interface,
     properties,
+    preferences,
 )
 
 
@@ -13,15 +14,17 @@ def register():
     properties.register()
     operators.register()
     interface.register()
-    node_tree_handlers.register()
+    preferences.register()
+    handlers.register()
 
 
 def unregister():
     """Unregister all handlers."""
-    node_tree_handlers.unregister()
     interface.unregister()
+    handlers.unregister()
     operators.unregister()
     properties.unregister()
+    preferences.unregister()
 
 
 if __name__ == "__main__":
