@@ -4,7 +4,8 @@ __all__ = ["SplitMergeGroupInput"]
 
 from typing import cast, TYPE_CHECKING
 from bpy.props import BoolProperty, EnumProperty  # type: ignore
-from .. import utils
+from ..utils.operators import BaseOperator
+from ..utils.nodes import get_selected_nodes, find_common_parent
 from enum import StrEnum, auto
 from dataclasses import dataclass, field
 
@@ -41,11 +42,11 @@ class LinksGroup:
     links: list[tuple[int, NodeLink]] = field(default_factory=list)  # type: ignore
 
 
-class SplitMergeGroupInput(utils.operators.BaseOperator):
+class SplitMergeGroupInput(BaseOperator):
     """Split/Merge Group Input nodes"""
 
     bl_idname = "node.split_merge_group_input"
-    bl_label = "Split/Merge Group Input Nodes"
+    bl_label = "Split/Merge"
     bl_description = "Split/Merge Group Input nodes"
     bl_options = {"REGISTER", "UNDO"}
 
@@ -81,7 +82,7 @@ class SplitMergeGroupInput(utils.operators.BaseOperator):
 
     @classmethod
     def _poll(cls, context: Context):
-        result = utils.nodes.get_selected_nodes(
+        result = get_selected_nodes(
             context,
             node_type="NodeGroupInput",
         )
@@ -89,7 +90,7 @@ class SplitMergeGroupInput(utils.operators.BaseOperator):
             return result
 
     def _execute(self, context: Context):
-        nodes = utils.nodes.get_selected_nodes(context, node_type="NodeGroupInput")
+        nodes = get_selected_nodes(context, node_type="NodeGroupInput")
         if isinstance(nodes, str):
             return nodes
         node_tree = cast(
@@ -188,7 +189,7 @@ class SplitMergeGroupInput(utils.operators.BaseOperator):
                                 left_most_node.location.y,
                             ),
                         )
-                        parent = utils.nodes.find_common_parent(connected_nodes)
+                        parent = find_common_parent(connected_nodes)
 
                 new_node: Node | None = None
                 for socket_index, link in group.links:
@@ -224,7 +225,7 @@ class SplitMergeGroupInput(utils.operators.BaseOperator):
                     if not to_socket:
                         continue
                     node_tree.links.remove(link)
-                    _ = node_tree.links.new(
+                    node_tree.links.new(
                         new_node.outputs[socket_index],
                         to_socket,
                         verify_limits=True,

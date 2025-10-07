@@ -3,7 +3,8 @@ from __future__ import annotations
 __all__ = ["HideRenameSingleOutputNode"]
 
 from typing import TYPE_CHECKING
-from .. import utils
+from ..utils.handlers import BaseNodeTreeHandler
+from ..utils.nodes import is_socket_hidden
 
 if TYPE_CHECKING:
     from bpy.types import Node, NodeTree
@@ -14,13 +15,9 @@ def get_nodes_with_single_output(node_tree: NodeTree) -> list[tuple[Node, str]] 
     for node in node_tree.nodes:
         if node.label:
             continue
-        if any(not utils.nodes.is_socket_hidden(socket) for socket in node.inputs):
+        if any(not is_socket_hidden(socket) for socket in node.inputs):
             continue
-        sockets = [
-            socket
-            for socket in node.outputs
-            if not utils.nodes.is_socket_hidden(socket)
-        ]
+        sockets = [socket for socket in node.outputs if not is_socket_hidden(socket)]
         if len(sockets) != 1:
             continue
         if sockets[0].name == node.label:
@@ -33,7 +30,7 @@ def get_nodes_with_single_output(node_tree: NodeTree) -> list[tuple[Node, str]] 
     return nodes
 
 
-class HideRenameSingleOutputNode(utils.handlers.BaseNodeTreeHandler):
+class HideRenameSingleOutputNode(BaseNodeTreeHandler):
     """Hides single output nodes and sets their label to the output socket name."""
 
     bl_idname = "node.hide_rename_single_output_node"

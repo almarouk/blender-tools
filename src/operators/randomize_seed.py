@@ -2,8 +2,10 @@ from __future__ import annotations
 
 __all__ = ["RandomizeSeed"]
 
-from typing import TYPE_CHECKING, cast
-from .. import utils
+from typing import TYPE_CHECKING
+from ..utils.handlers import BaseNodeTreeHandler
+from ..utils.nodes import is_socket_hidden, get_socket_location
+from ..utils.properties import get_custom_properties
 
 if TYPE_CHECKING:
     from bpy.types import (
@@ -27,9 +29,9 @@ def get_seed_links(node_tree: NodeTree) -> list[NodeLink] | str:
 
     # Check if the node tree has a seed input
     has_seed_input = False
-    for item in node_tree.interface.items_tree:
+    for item in node_tree.interface.items_tree:  # type: ignore
         if item.item_type == "SOCKET":
-            item = cast("NodeTreeInterfaceSocket", item)
+            item: NodeTreeInterfaceSocket
             if item.in_out == "INPUT" and item.name.strip().lower() == "seed":
                 has_seed_input = True
                 break
@@ -42,7 +44,7 @@ def get_seed_links(node_tree: NodeTree) -> list[NodeLink] | str:
         if node.bl_idname == "NodeGroupInput":
             for socket in node.outputs:
                 if socket.name.strip().lower() == "seed":
-                    if not utils.nodes.is_socket_hidden(socket) and socket.is_linked:
+                    if not is_socket_hidden(socket) and socket.is_linked:
                         has_linked_seed_inputs = True
                     break
         if has_linked_seed_inputs:
@@ -75,7 +77,7 @@ def get_seed_links(node_tree: NodeTree) -> list[NodeLink] | str:
     return seed_links
 
 
-class RandomizeSeed(utils.handlers.BaseNodeTreeHandler):
+class RandomizeSeed(BaseNodeTreeHandler):
     """Randomize the seed value for the node tree."""
 
     bl_idname = "node.randomize_seed"
@@ -94,24 +96,23 @@ class RandomizeSeed(utils.handlers.BaseNodeTreeHandler):
         if isinstance(links, str):
             return links
 
-        props = utils.properties.get_custom_properties(node_tree)
+        props = get_custom_properties(node_tree)
         if props is None:
             return "Failed to get custom properties for node tree."
 
         counter = props.auto_seed_counter
         for link in links:
-            from_node = cast("NodeGroupInput", link.from_node)
-            to_node = cast("Node", link.to_node)
+            from_node: NodeGroupInput = link.from_node  # type: ignore
+            to_node: Node = link.to_node  # type: ignore
+            to_socket: NodeSocket = link.to_socket  # type: ignore
             # Create Random Value node
-            random_node = cast(
-                "FunctionNodeRandomValue",
-                node_tree.nodes.new(type="FunctionNodeRandomValue"),
-            )
+            random_node: FunctionNodeRandomValue = node_tree.nodes.new(
+                type="FunctionNodeRandomValue"
+            )  # type: ignore
             random_node.hide = True
             random_node.select = False
             random_node.width = random_node.bl_width_min
-            to_socket = cast("NodeSocket", link.to_socket)
-            location = utils.nodes.get_socket_location(to_socket, True)
+            location = get_socket_location(to_socket, True)
             if location is None:
                 location = (
                     to_node.location.x,
@@ -127,15 +128,15 @@ class RandomizeSeed(utils.handlers.BaseNodeTreeHandler):
                 random_node.parent = to_node.parent  # type: ignore
 
             # Set default range for integer random values
-            socket = cast("NodeSocketInt", random_node.inputs["Min"])
+            socket: NodeSocketInt = random_node.inputs["Min"]  # type: ignore
             socket.default_value = 0
-            socket = cast("NodeSocketInt", random_node.inputs["Max"])
+            socket: NodeSocketInt = random_node.inputs["Max"]  # type: ignore
             socket.default_value = 1000000
 
             # Add an Integer Value Node
-            int_value_node = cast(
-                "FunctionNodeInputInt", node_tree.nodes.new(type="FunctionNodeInputInt")
-            )
+            int_value_node: FunctionNodeInputInt = node_tree.nodes.new(
+                type="FunctionNodeInputInt"
+            )  # type: ignore
             int_value_node.hide = True
             int_value_node.select = False
             int_value_node.width = int_value_node.bl_width_min
@@ -150,9 +151,9 @@ class RandomizeSeed(utils.handlers.BaseNodeTreeHandler):
                 int_value_node.parent = to_node.parent  # type: ignore
 
             # Add a Group Input Node with Seed shown only
-            group_input_node = cast(
-                "NodeGroupInput", node_tree.nodes.new(type="NodeGroupInput")
-            )
+            group_input_node: NodeGroupInput = node_tree.nodes.new(
+                type="NodeGroupInput"
+            )  # type: ignore
             group_input_node.hide = True
             group_input_node.select = False
             group_input_node.width = group_input_node.bl_width_min
@@ -171,16 +172,15 @@ class RandomizeSeed(utils.handlers.BaseNodeTreeHandler):
                 group_input_node.parent = to_node.parent  # type: ignore
 
             # Create new links through the Random Value node
-            _ = node_tree.links.new(
+            node_tree.links.new(
                 group_input_node.outputs["Seed"],
                 random_node.inputs["Seed"],
                 verify_limits=True,
             )
-            to_socket = cast("NodeSocket", link.to_socket)
-            _ = node_tree.links.new(
+            node_tree.links.new(
                 random_node.outputs["Value"], to_socket, verify_limits=True
             )
-            _ = node_tree.links.new(
+            node_tree.links.new(
                 int_value_node.outputs["Integer"],
                 random_node.inputs["ID"],
                 verify_limits=True,
@@ -190,13 +190,7 @@ class RandomizeSeed(utils.handlers.BaseNodeTreeHandler):
             # node_tree.links.remove(link)
 
             # Check if group input node has no links, remove it
-            has_links = False
-            for socket in from_node.outputs:
-                if socket.is_linked:
-                    has_links = True
-                    break
-
-            if not has_links:
+            if not any(socket.is_linked for socket in from_node.outputs):
                 node_tree.nodes.remove(from_node)
 
         props.auto_seed_counter = counter

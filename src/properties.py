@@ -7,6 +7,7 @@ from bpy.types import NodeTree, PropertyGroup
 from bpy.props import PointerProperty, IntProperty  # type: ignore
 from bpy.utils import register_class, unregister_class
 from types import MappingProxyType
+from . import CUSTOM_PROPS_NAME
 
 if TYPE_CHECKING:
     from bpy.types import ID
@@ -21,9 +22,6 @@ class AutoSeedCounterProp(PropertyGroup):
     )
     if TYPE_CHECKING:
         auto_seed_counter: int = 0
-
-
-CUSTOM_PROPS_NAME = "blender_tools"
 
 property_groups_to_register: MappingProxyType[type[ID], type[PropertyGroup]] = (
     MappingProxyType(

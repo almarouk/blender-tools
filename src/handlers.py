@@ -3,14 +3,13 @@ from __future__ import annotations
 __all__ = [
     "register",
     "unregister",
-    "handler_operators",
 ]
 
 from typing import TYPE_CHECKING, Callable, ParamSpec, TypeVar
 from functools import partial
 from bpy.app.handlers import persistent, depsgraph_update_post
 from bpy.app.timers import register as register_timer
-from .operators import HideRenameSingleOutputNode, RandomizeSeed
+from .operators import classes
 from . import utils
 
 if TYPE_CHECKING:
@@ -25,7 +24,10 @@ if TYPE_CHECKING:
 
 def call_operators(updated_trees: list[str]) -> None:
     global handler_operators
-    active_handlers = utils.preferences.get_preferences().get_active_handlers()
+    prefs = utils.preferences.get_preferences()
+    if not prefs:
+        return
+    active_handlers = prefs.get_active_handlers()
     for cls in handler_operators:
         if cls.bl_idname in active_handlers:
             for node_tree_name in updated_trees:
@@ -50,17 +52,19 @@ def depsgraph_handler(scene: Scene, depsgraph: Depsgraph) -> None:
         first_interval=0.3,
     )
 
+handler_operators: tuple[type[utils.handlers.BaseNodeTreeHandler], ...] = {
+    cls for cls in classes if utils.handlers.is_handler_operator(cls)
+}  # type: ignore
+
 
 def register():
-    utils.preferences.get_preferences().register_handlers(handler_operators)
+    prefs = utils.preferences.get_preferences()
+    if not prefs:
+        return
+    prefs.register_handlers(handler_operators)
     depsgraph_update_post.append(depsgraph_handler)
 
 
 def unregister():
-    depsgraph_update_post.remove(depsgraph_handler)
-
-
-handler_operators: tuple[type[utils.handlers.BaseNodeTreeHandler], ...] = (
-    HideRenameSingleOutputNode,
-    RandomizeSeed,
-)
+    if depsgraph_handler in depsgraph_update_post:
+        depsgraph_update_post.remove(depsgraph_handler)

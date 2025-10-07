@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-__all__ = ["BaseNodeTreeHandler"]
+__all__ = ["BaseNodeTreeHandler", "is_handler_operator"]
 
 from typing import TYPE_CHECKING
 from abc import abstractmethod
@@ -12,6 +12,8 @@ from bpy.props import StringProperty  # type: ignore
 if TYPE_CHECKING:
     from bpy.types import Context, NodeTree
 
+def is_handler_operator(cls: type[BaseOperator]) -> bool:
+    return issubclass(cls, BaseNodeTreeHandler)
 
 class BaseNodeTreeHandler(BaseOperator):
     node_tree_name: StringProperty(  # type: ignore

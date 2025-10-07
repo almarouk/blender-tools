@@ -1,56 +1,17 @@
 from __future__ import annotations
 
-__all__ = ["register", "unregister", "get_preferences", "draw_preferences"]
+__all__ = ["register", "unregister"]
 
-from typing import TYPE_CHECKING, cast, Iterable
+from typing import TYPE_CHECKING, Iterable
 import bpy
 from bpy.props import BoolProperty, CollectionProperty, StringProperty  # type: ignore
 from bpy.types import AddonPreferences, PropertyGroup, UIList
 from bpy.utils import register_class, unregister_class
-from .. import __package__ as pkg
-
-ADDON_ID = cast(str, pkg)
+from . import PACKAGE
 
 if TYPE_CHECKING:
     from bpy.types import Context, bpy_prop_collection_idprop, UILayout
     from .utils.handlers import BaseNodeTreeHandler
-
-
-def get_preferences(context: Context | None = None) -> Preferences:
-    if context is None:
-        context = bpy.context
-    if context.preferences is None:
-        raise RuntimeError("Blender preferences not found")
-    addon = context.preferences.addons.get(ADDON_ID)
-    if addon is None:
-        raise RuntimeError("Addon preferences not found")
-    prefs = cast("Preferences", addon.preferences)
-    return prefs
-
-
-def draw_preferences(
-    layout: UILayout, prefs: Preferences | None = None, compact: bool = True
-) -> None:
-    if prefs is None:
-        prefs = get_preferences()
-    nb_col = 1 if compact else 2
-    grid = layout.grid_flow(row_major=True, columns=nb_col)
-
-    row = grid.row(align=True)
-    if compact:
-        row = row.column(align=True)
-    row.label(text="Node Tree Handlers:")
-    if not prefs.handler_settings:
-        row.label(text="No handlers available", icon="INFO")
-    else:
-        row.template_list(
-            "NODETREE_UL_handler_preferences",
-            "",
-            prefs,
-            "handler_settings",
-            prefs,
-            "active_handler_index",
-        )
 
 
 class NodeTreeHandlerPreference(PropertyGroup):
@@ -103,7 +64,7 @@ class NodeTreeHandlerPreferences(UIList):
 
 
 class Preferences(AddonPreferences):
-    bl_idname = ADDON_ID
+    bl_idname = PACKAGE
 
     handler_settings: CollectionProperty(  # type: ignore
         name="Node Tree Handlers",
@@ -135,9 +96,29 @@ class Preferences(AddonPreferences):
     def get_active_handlers(self) -> list[str]:
         return [h.idname for h in self.handler_settings if h.enabled]
 
+    def draw_preferences(self, layout: UILayout, compact: bool = True) -> None:
+        nb_col = 1 if compact else 2
+        grid = layout.grid_flow(row_major=True, columns=nb_col)
+
+        row = grid.row(align=True)
+        if compact:
+            row = row.column(align=True)
+        row.label(text="Node Tree Handlers:")
+        if not self.handler_settings:
+            row.label(text="No handlers available", icon="INFO")
+        else:
+            row.template_list(
+                NodeTreeHandlerPreferences.bl_idname,
+                "",
+                self,
+                "handler_settings",
+                self,
+                "active_handler_index",
+            )
+
     def draw(self, context: Context) -> None:
         layout = self.layout
-        draw_preferences(layout, self, compact=False)
+        self.draw_preferences(layout, compact=False)
 
 
 classes = (

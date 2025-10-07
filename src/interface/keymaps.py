@@ -33,7 +33,8 @@ _kmi_defs: list[KeyMapItemArgs] = [
     KeyMapItemArgs(
         idname=HideResizeNode.bl_idname,
         type="H",
-        value="DOUBLE_CLICK",
+        value="CLICK",
+        head=True,
     )
 ]
 

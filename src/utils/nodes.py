@@ -116,7 +116,7 @@ def get_node_tree(context: Context) -> NodeTree | str:
 
 def get_selected_nodes(
     context: Context,
-    node_type: str | None = None,
+    node_type: str | list[str] | None = None,
 ) -> list[Node] | str:
     node_tree = get_node_tree(context)
     if isinstance(node_tree, str):
@@ -129,8 +129,10 @@ def get_selected_nodes(
 
     # Filter by node type if specified
     if node_type:
+        if isinstance(node_type, str):
+            node_type = [node_type]
         selected_nodes = [
-            node for node in selected_nodes if node.bl_idname == node_type
+            node for node in selected_nodes if node.bl_idname in node_type
         ]
         if not selected_nodes:
             return f"No selected nodes of type {node_type}."

@@ -32,6 +32,10 @@ class BaseOperator(Operator):
             return False
         return True
 
+    @classmethod
+    def poll_silent(cls, context: Context) -> bool:
+        return cls._poll(context) is None
+
     def execute(self, context: Context) -> set[str]:  # type: ignore
         result = self._execute(context)
         if isinstance(result, str):
