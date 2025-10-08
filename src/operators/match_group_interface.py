@@ -83,6 +83,15 @@ def copy_socket_properties(
         if hasattr(target, attr) and hasattr(source, attr):
             setattr(target, attr, getattr(source, attr))
 
+def is_panel_empty(panel: _NodeTreeInterfacePanel) -> bool:
+    for item in panel.interface_items:
+        if item.item_type == "PANEL":
+            item = cast("_NodeTreeInterfacePanel", item)
+            if not is_panel_empty(item):
+                return False
+        else:
+            return False
+    return True
 
 class MatchGroupInterface(BaseOperator):
     """Match a Group Node's interface to the Group Input/Output nodes connected to it"""
@@ -181,5 +190,14 @@ class MatchGroupInterface(BaseOperator):
 
             # Remove temporary root panel
             node.node_tree.interface.remove(panels_map[0], move_content_to_parent=True)
-            # Remove empty panels?
-            # ...
+            del panels_map
+            del target_id_to_interface
+            # Remove empty panels
+            panels_to_delete = [
+                item
+                for item in node.node_tree.interface.items_tree
+                if item.item_type == "PANEL"
+                and is_panel_empty(cast("_NodeTreeInterfacePanel", item))
+            ]
+            for item in reversed(panels_to_delete):
+                node.node_tree.interface.remove(item, move_content_to_parent=False)
