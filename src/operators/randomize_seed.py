@@ -141,8 +141,8 @@ class RandomizeSeed(BaseNodeTreeHandler):
             int_value_node.select = False
             int_value_node.width = int_value_node.bl_width_min
             int_value_node.location = (
-                random_node.location.x - int_value_node.width - 25,
-                random_node.location.y,
+                random_node.location_absolute.x - int_value_node.width - 25,
+                random_node.location_absolute.y,
             )
             int_value_node.label = str(counter)
             int_value_node.integer = counter
@@ -165,8 +165,8 @@ class RandomizeSeed(BaseNodeTreeHandler):
                     socket_out.hide = True
             # group_input_node.location = (random_node.location.x - group_input_node.width - 25, int_value_node.location.y - int_value_node.dimensions.y / bpy.context.preferences.system.ui_scale - 5)
             group_input_node.location = (
-                random_node.location.x - group_input_node.width - 25,
-                int_value_node.location.y - int_value_node.bl_height_min - 5,
+                random_node.location_absolute.x - group_input_node.width - 25,
+                int_value_node.location_absolute.y - int_value_node.bl_height_min - 5,
             )
             if to_node.parent:
                 group_input_node.parent = to_node.parent  # type: ignore
